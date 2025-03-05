@@ -127,7 +127,7 @@
     <div id="game-container">
         <div id="rocket">🚀</div>
         <div id="level">Level: 1</div>
-        <div id="timer">Time: 30</div>
+        <div id="timer">Time: 35</div>
         <div id="lives">Lives: 2</div>
         <div id="question">Loading...</div>
         <div id="answers"></div>
@@ -156,13 +156,13 @@
 
         const profiles = {
             '1st': [
-                { type: 'addition', maxNum: 10, time: 30 },
-                { type: 'addition', maxNum: 15, time: 25 },
-                { type: 'subtraction', maxNum: 10, time: 25 },
-                { type: 'addition', maxNum: 20, time: 20 },
-                { type: 'subtraction', maxNum: 15, time: 20 },
-                { type: 'addition', maxNum: 25, time: 18 },
-                { type: 'subtraction', maxNum: 20, time: 18 }
+                { type: 'addition', maxNum: 5, time: 35 },    // Easier start: 1-5
+                { type: 'addition', maxNum: 8, time: 35 },    // 1-8
+                { type: 'addition', maxNum: 10, time: 30 },   // 1-10
+                { type: 'subtraction', maxNum: 5, time: 30 }, // Intro subtraction
+                { type: 'addition', maxNum: 12, time: 25 },   // 1-12
+                { type: 'subtraction', maxNum: 8, time: 25 }, // 1-8
+                { type: 'addition', maxNum: 15, time: 25 }    // Max 1-15
             ],
             '3rd': [
                 { type: 'addition', maxNum: 20, time: 25 },
@@ -322,7 +322,6 @@
             rocket.style.animation = 'explode 1.5s forwards';
             explodeSound.play();
 
-            // Add explosion particles
             for (let i = 0; i < 8; i++) {
                 let particle = document.createElement('div');
                 particle.textContent = '💥';
@@ -343,14 +342,14 @@
                     particle.style.bottom = `${endY}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                setTimeout(() => particle.remove(), 1500); // Clean up after animation
+                setTimeout(() => particle.remove(), 1500);
             }
 
             setTimeout(() => {
                 question.textContent = `Rocket exploded! Level ${currentLevel + 1} failed. Score: ${score}`;
                 answersDiv.innerHTML = '';
                 retryBtn.style.display = 'block';
-            }, 1500); // Match longer animation duration
+            }, 1500);
         }
 
         function retryGame() {
