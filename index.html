@@ -22,7 +22,7 @@
             height: 600px;
             border: 2px solid white;
             background: url('https://www.transparenttextures.com/patterns/stardust.png');
-            display: none; /* Hidden until grade selected */
+            display: none;
         }
         #start-screen {
             text-align: center;
@@ -38,6 +38,12 @@
             left: 175px;
             font-size: 50px;
             transition: bottom 0.3s ease;
+            z-index: 10;
+        }
+        .explosion-particle {
+            position: absolute;
+            font-size: 30px;
+            z-index: 5;
         }
         #question {
             font-size: 30px;
@@ -101,8 +107,12 @@
         }
         @keyframes explode {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 1; content: "💥"; }
-            100% { transform: scale(2); opacity: 0; content: "💥"; }
+            50% { transform: scale(2); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        @keyframes scatter {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
@@ -177,7 +187,6 @@
             ]
         };
 
-        // Sound effects
         const correctSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3');
         const wrongSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-03.mp3');
         const explodeSound = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-01.mp3');
@@ -310,13 +319,38 @@
             gameOver = true;
             clearInterval(timer);
             rocket.textContent = '💥';
-            rocket.style.animation = 'explode 0.5s forwards';
+            rocket.style.animation = 'explode 1.5s forwards';
             explodeSound.play();
+
+            // Add explosion particles
+            for (let i = 0; i < 8; i++) {
+                let particle = document.createElement('div');
+                particle.textContent = '💥';
+                particle.className = 'explosion-particle';
+                let startX = parseInt(rocket.style.left) || 175;
+                let startY = parseInt(rocket.style.bottom) || 50;
+                particle.style.left = `${startX}px`;
+                particle.style.bottom = `${startY}px`;
+                gameContainer.appendChild(particle);
+
+                let angle = Math.random() * 2 * Math.PI;
+                let distance = Math.random() * 150 + 50;
+                let endX = startX + Math.cos(angle) * distance;
+                let endY = startY + Math.sin(angle) * distance;
+                particle.style.transition = 'all 1.5s ease-out';
+                setTimeout(() => {
+                    particle.style.left = `${endX}px`;
+                    particle.style.bottom = `${endY}px`;
+                    particle.style.opacity = '0';
+                }, 10);
+                setTimeout(() => particle.remove(), 1500); // Clean up after animation
+            }
+
             setTimeout(() => {
                 question.textContent = `Rocket exploded! Level ${currentLevel + 1} failed. Score: ${score}`;
                 answersDiv.innerHTML = '';
                 retryBtn.style.display = 'block';
-            }, 500);
+            }, 1500); // Match longer animation duration
         }
 
         function retryGame() {
