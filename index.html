@@ -118,14 +118,25 @@
         let gameOver = false;
         let timer;
 
+        // Sound effects
+        const correctSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3');
+        const wrongSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-03.mp3');
+        const explodeSound = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-01.mp3');
+
         const levels = [
             { type: 'addition', maxNum: 10, time: 30 },
             { type: 'addition', maxNum: 20, time: 25 },
             { type: 'subtraction', maxNum: 20, time: 20 },
             { type: 'addition', maxNum: 50, time: 15 },
+            { type: 'multiplication', maxNum: 10, time: 20 },
             { type: 'subtraction', maxNum: 50, time: 15 },
+            { type: 'division', maxNum: 10, time: 20 },
+            { type: 'multiplication', maxNum: 12, time: 15 },
+            { type: 'division', maxNum: 12, time: 15 },
             { type: 'addition', maxNum: 100, time: 12 },
-            { type: 'subtraction', maxNum: 100, time: 12 }
+            { type: 'subtraction', maxNum: 100, time: 12 },
+            { type: 'multiplication', maxNum: 15, time: 12 },
+            { type: 'division', maxNum: 15, time: 12 }
         ];
 
         let currentQuestions = [];
@@ -145,8 +156,8 @@
             currentQuestionIndex = 0;
             lives = 2;
             rocket.style.bottom = '50px';
-            rocket.textContent = '🚀'; // Reset to rocket
-            rocket.style.animation = ''; // Clear any animation
+            rocket.textContent = '🚀';
+            rocket.style.animation = '';
             levelText.textContent = `Level: ${currentLevel + 1}`;
             timerText.textContent = `Time: ${timeLeft.toFixed(1)}`;
             livesText.textContent = `Lives: ${lives}`;
@@ -161,6 +172,13 @@
                     if (a < b) [a, b] = [b, a];
                     ans = a - b;
                     q = `What is ${a} - ${b}?`;
+                } else if (levelData.type === 'multiplication') {
+                    ans = a * b;
+                    q = `What is ${a} × ${b}?`;
+                } else if (levelData.type === 'division') {
+                    ans = a;
+                    a = a * b;
+                    q = `What is ${a} ÷ ${b}?`;
                 } else {
                     ans = a + b;
                     q = `What is ${a} + ${b}?`;
@@ -185,7 +203,14 @@
             currentAnswer = q.answer;
 
             answersDiv.innerHTML = '';
-            let options = [currentAnswer, currentAnswer - 2, currentAnswer + 3];
+            let options = [currentAnswer];
+            let distractor1 = currentAnswer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+            let distractor2 = currentAnswer + (Math.random() > 0.5 ? 2 : -2) * (Math.floor(Math.random() * 5) + 1);
+            if (levels[currentLevel].type === 'division') {
+                distractor1 = Math.max(1, distractor1);
+                distractor2 = Math.max(1, distractor2);
+            }
+            options.push(distractor1, distractor2);
             options.sort(() => Math.random() - 0.5);
             options.forEach(opt => {
                 let btn = document.createElement('button');
@@ -202,12 +227,14 @@
             if (answer === currentAnswer) {
                 score += 10 + currentLevel * 5;
                 currentQuestionIndex++;
+                correctSound.play();
                 let rocketPos = parseInt(rocket.style.bottom) || 50;
                 rocket.style.bottom = `${rocketPos + 50}px`;
                 updateQuestion();
             } else {
                 lives--;
                 livesText.textContent = `Lives: ${lives}`;
+                wrongSound.play();
                 rocket.style.animation = 'shake 0.3s';
                 setTimeout(() => rocket.style.animation = '', 300);
                 if (lives <= 0) {
@@ -232,13 +259,14 @@
         function explodeRocket() {
             gameOver = true;
             clearInterval(timer);
-            rocket.textContent = '💥'; // Explosion emoji
+            rocket.textContent = '💥';
             rocket.style.animation = 'explode 0.5s forwards';
+            explodeSound.play();
             setTimeout(() => {
                 question.textContent = `Rocket exploded! Level ${currentLevel + 1} failed. Score: ${score}`;
                 answersDiv.innerHTML = '';
                 retryBtn.style.display = 'block';
-            }, 500); // Delay message to let explosion finish
+            }, 500);
         }
 
         function retryGame() {
