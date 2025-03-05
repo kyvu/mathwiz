@@ -22,6 +22,15 @@
             height: 600px;
             border: 2px solid white;
             background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            display: none; /* Hidden until grade selected */
+        }
+        #start-screen {
+            text-align: center;
+            position: relative;
+            width: 400px;
+            height: 600px;
+            border: 2px solid white;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
         }
         #rocket {
             position: absolute;
@@ -76,6 +85,13 @@
         #retry:hover {
             background: #cc0000;
         }
+        .grade-button {
+            background: #1E90FF;
+            margin: 20px;
+        }
+        .grade-button:hover {
+            background: #1C86EE;
+        }
         @keyframes shake {
             0% { transform: translateX(0); }
             25% { transform: translateX(10px); }
@@ -91,6 +107,13 @@
     </style>
 </head>
 <body>
+    <div id="start-screen">
+        <h1 style="margin-top: 50px;">Rocket Math Blast</h1>
+        <p>Choose your grade level:</p>
+        <button class="grade-button button" onclick="startGame('1st')">1st Grade</button>
+        <button class="grade-button button" onclick="startGame('3rd')">3rd Grade</button>
+        <button class="grade-button button" onclick="startGame('5th')">5th Grade</button>
+    </div>
     <div id="game-container">
         <div id="rocket">🚀</div>
         <div id="level">Level: 1</div>
@@ -109,6 +132,8 @@
         let livesText = document.getElementById('lives');
         let answersDiv = document.getElementById('answers');
         let retryBtn = document.getElementById('retry');
+        let gameContainer = document.getElementById('game-container');
+        let startScreen = document.getElementById('start-screen');
         let score = 0;
         let currentLevel = 0;
         let currentQuestionIndex = 0;
@@ -117,32 +142,57 @@
         let currentAnswer;
         let gameOver = false;
         let timer;
+        let currentProfile;
+
+        const profiles = {
+            '1st': [
+                { type: 'addition', maxNum: 10, time: 30 },
+                { type: 'addition', maxNum: 15, time: 25 },
+                { type: 'subtraction', maxNum: 10, time: 25 },
+                { type: 'addition', maxNum: 20, time: 20 },
+                { type: 'subtraction', maxNum: 15, time: 20 },
+                { type: 'addition', maxNum: 25, time: 18 },
+                { type: 'subtraction', maxNum: 20, time: 18 }
+            ],
+            '3rd': [
+                { type: 'addition', maxNum: 20, time: 25 },
+                { type: 'subtraction', maxNum: 20, time: 20 },
+                { type: 'addition', maxNum: 50, time: 15 },
+                { type: 'subtraction', maxNum: 50, time: 15 },
+                { type: 'multiplication', maxNum: 10, time: 20 },
+                { type: 'multiplication', maxNum: 12, time: 15 },
+                { type: 'addition', maxNum: 100, time: 12 }
+            ],
+            '5th': [
+                { type: 'addition', maxNum: 50, time: 15 },
+                { type: 'subtraction', maxNum: 50, time: 15 },
+                { type: 'multiplication', maxNum: 10, time: 20 },
+                { type: 'division', maxNum: 10, time: 20 },
+                { type: 'multiplication', maxNum: 12, time: 15 },
+                { type: 'division', maxNum: 12, time: 15 },
+                { type: 'addition', maxNum: 100, time: 12 },
+                { type: 'subtraction', maxNum: 100, time: 12 },
+                { type: 'multiplication', maxNum: 15, time: 12 },
+                { type: 'division', maxNum: 15, time: 12 }
+            ]
+        };
 
         // Sound effects
         const correctSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3');
         const wrongSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-03.mp3');
         const explodeSound = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-01.mp3');
 
-        const levels = [
-            { type: 'addition', maxNum: 10, time: 30 },
-            { type: 'addition', maxNum: 20, time: 25 },
-            { type: 'subtraction', maxNum: 20, time: 20 },
-            { type: 'addition', maxNum: 50, time: 15 },
-            { type: 'multiplication', maxNum: 10, time: 20 },
-            { type: 'subtraction', maxNum: 50, time: 15 },
-            { type: 'division', maxNum: 10, time: 20 },
-            { type: 'multiplication', maxNum: 12, time: 15 },
-            { type: 'division', maxNum: 12, time: 15 },
-            { type: 'addition', maxNum: 100, time: 12 },
-            { type: 'subtraction', maxNum: 100, time: 12 },
-            { type: 'multiplication', maxNum: 15, time: 12 },
-            { type: 'division', maxNum: 15, time: 12 }
-        ];
-
         let currentQuestions = [];
 
+        function startGame(grade) {
+            currentProfile = profiles[grade];
+            startScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            startLevel();
+        }
+
         function startLevel() {
-            if (currentLevel >= levels.length) {
+            if (currentLevel >= currentProfile.length) {
                 gameOver = true;
                 question.textContent = `Congratulations! All levels completed. Score: ${score}`;
                 answersDiv.innerHTML = '';
@@ -151,7 +201,7 @@
                 return;
             }
 
-            let levelData = levels[currentLevel];
+            let levelData = currentProfile[currentLevel];
             timeLeft = levelData.time;
             currentQuestionIndex = 0;
             lives = 2;
@@ -206,7 +256,7 @@
             let options = [currentAnswer];
             let distractor1 = currentAnswer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
             let distractor2 = currentAnswer + (Math.random() > 0.5 ? 2 : -2) * (Math.floor(Math.random() * 5) + 1);
-            if (levels[currentLevel].type === 'division') {
+            if (currentProfile[currentLevel].type === 'division') {
                 distractor1 = Math.max(1, distractor1);
                 distractor2 = Math.max(1, distractor2);
             }
@@ -275,9 +325,6 @@
             gameOver = false;
             startLevel();
         }
-
-        // Start game
-        startLevel();
     </script>
 </body>
 </html>
