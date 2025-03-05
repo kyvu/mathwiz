@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rocket Math Blast</title>
+    <style>
+        body {
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-container {
+            text-align: center;
+            position: relative;
+            width: 400px;
+            height: 600px;
+            border: 2px solid white;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+        }
+        #rocket {
+            position: absolute;
+            bottom: 50px;
+            left: 175px;
+            font-size: 50px;
+            transition: bottom 0.3s ease;
+        }
+        #question {
+            font-size: 30px;
+            margin-top: 50px;
+        }
+        #level {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+        }
+        #lives {
+            position: absolute;
+            top: 30px;
+            left: 10px;
+            font-size: 20px;
+        }
+        .button {
+            font-size: 24px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        #retry {
+            display: none;
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+        }
+        #retry:hover {
+            background: #cc0000;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(10px); }
+            50% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 1; content: "💥"; }
+            100% { transform: scale(2); opacity: 0; content: "💥"; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="rocket">🚀</div>
+        <div id="level">Level: 1</div>
+        <div id="timer">Time: 30</div>
+        <div id="lives">Lives: 2</div>
+        <div id="question">Loading...</div>
+        <div id="answers"></div>
+        <button id="retry" class="button" onclick="retryGame()">Retry</button>
+    </div>
+
+    <script>
+        let rocket = document.getElementById('rocket');
+        let question = document.getElementById('question');
+        let levelText = document.getElementById('level');
+        let timerText = document.getElementById('timer');
+        let livesText = document.getElementById('lives');
+        let answersDiv = document.getElementById('answers');
+        let retryBtn = document.getElementById('retry');
+        let score = 0;
+        let currentLevel = 0;
+        let currentQuestionIndex = 0;
+        let lives = 2;
+        let timeLeft;
+        let currentAnswer;
+        let gameOver = false;
+        let timer;
+
+        const levels = [
+            { type: 'addition', maxNum: 10, time: 30 },
+            { type: 'addition', maxNum: 20, time: 25 },
+            { type: 'subtraction', maxNum: 20, time: 20 },
+            { type: 'addition', maxNum: 50, time: 15 },
+            { type: 'subtraction', maxNum: 50, time: 15 },
+            { type: 'addition', maxNum: 100, time: 12 },
+            { type: 'subtraction', maxNum: 100, time: 12 }
+        ];
+
+        let currentQuestions = [];
+
+        function startLevel() {
+            if (currentLevel >= levels.length) {
+                gameOver = true;
+                question.textContent = `Congratulations! All levels completed. Score: ${score}`;
+                answersDiv.innerHTML = '';
+                retryBtn.style.display = 'block';
+                clearInterval(timer);
+                return;
+            }
+
+            let levelData = levels[currentLevel];
+            timeLeft = levelData.time;
+            currentQuestionIndex = 0;
+            lives = 2;
+            rocket.style.bottom = '50px';
+            rocket.textContent = '🚀'; // Reset to rocket
+            rocket.style.animation = ''; // Clear any animation
+            levelText.textContent = `Level: ${currentLevel + 1}`;
+            timerText.textContent = `Time: ${timeLeft.toFixed(1)}`;
+            livesText.textContent = `Lives: ${lives}`;
+            retryBtn.style.display = 'none';
+
+            currentQuestions = [];
+            for (let i = 0; i < 5; i++) {
+                let a = Math.floor(Math.random() * levelData.maxNum) + 1;
+                let b = Math.floor(Math.random() * levelData.maxNum) + 1;
+                let q, ans;
+                if (levelData.type === 'subtraction') {
+                    if (a < b) [a, b] = [b, a];
+                    ans = a - b;
+                    q = `What is ${a} - ${b}?`;
+                } else {
+                    ans = a + b;
+                    q = `What is ${a} + ${b}?`;
+                }
+                currentQuestions.push({ question: q, answer: ans });
+            }
+
+            updateQuestion();
+            startTimer();
+        }
+
+        function updateQuestion() {
+            if (currentQuestionIndex >= 5) {
+                currentLevel++;
+                clearInterval(timer);
+                startLevel();
+                return;
+            }
+
+            let q = currentQuestions[currentQuestionIndex];
+            question.textContent = q.question;
+            currentAnswer = q.answer;
+
+            answersDiv.innerHTML = '';
+            let options = [currentAnswer, currentAnswer - 2, currentAnswer + 3];
+            options.sort(() => Math.random() - 0.5);
+            options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.className = 'button';
+                btn.onclick = () => checkAnswer(opt);
+                answersDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(answer) {
+            if (gameOver) return;
+
+            if (answer === currentAnswer) {
+                score += 10 + currentLevel * 5;
+                currentQuestionIndex++;
+                let rocketPos = parseInt(rocket.style.bottom) || 50;
+                rocket.style.bottom = `${rocketPos + 50}px`;
+                updateQuestion();
+            } else {
+                lives--;
+                livesText.textContent = `Lives: ${lives}`;
+                rocket.style.animation = 'shake 0.3s';
+                setTimeout(() => rocket.style.animation = '', 300);
+                if (lives <= 0) {
+                    explodeRocket();
+                }
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                if (!gameOver) {
+                    timeLeft -= 0.1;
+                    timerText.textContent = `Time: ${timeLeft.toFixed(1)}`;
+                    if (timeLeft <= 0) {
+                        explodeRocket();
+                    }
+                }
+            }, 100);
+        }
+
+        function explodeRocket() {
+            gameOver = true;
+            clearInterval(timer);
+            rocket.textContent = '💥'; // Explosion emoji
+            rocket.style.animation = 'explode 0.5s forwards';
+            setTimeout(() => {
+                question.textContent = `Rocket exploded! Level ${currentLevel + 1} failed. Score: ${score}`;
+                answersDiv.innerHTML = '';
+                retryBtn.style.display = 'block';
+            }, 500); // Delay message to let explosion finish
+        }
+
+        function retryGame() {
+            score = 0;
+            currentLevel = 0;
+            gameOver = false;
+            startLevel();
+        }
+
+        // Start game
+        startLevel();
+    </script>
+</body>
+</html>
